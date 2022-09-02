@@ -15,7 +15,7 @@
 # which you are expected to set up once and rarely edit after that.
 #
 # For technical reasons, this file is *NOT* reloaded automatically when you
-# use 'bundle exec jekyll serve'. If you change this file, please restart
+# quote 'bundle exec jekyll serve'. If you change this file, please restart
 # the server process.
 #
 # Site settings
@@ -24,12 +24,12 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: Your awesome title
-email: your-email@domain.com
+title: allen-bwfv
+email: allen95bwfv@gmail.com
 author: GitHub User
 
 # Copyright setting
-# You can use any html code, currently below placeholders are available:
+# You can quote any html code, currently below placeholders are available:
 # * current year: {currentYear}
 # * author: {author} (Value is the same as site.author)
 # * copyright: (c) - ©
@@ -154,11 +154,11 @@ yat:
 #   - about.md
 
 # Page default value
-# defaults:
-#   home:
-#     heading: "Your awesome heading"
-#     subheading: "Your awesome subheading"
-#     banner: "Your image url"
+
+home:
+  heading: "向往的生活"
+  subheading: "做自己"
+  banner: "https://sm.ms/image/FePbKDMcONAE9IH"
 
 # Banner default settings
 # These banner settings are for global banner default, but you can also
@@ -192,7 +192,7 @@ yat:
 #   repo: "The repo to store comments"
 #   client_id: "Your client ID"
 #   client_secret: "Your client secret"
-#   redirect_uri: "Your redirect url"   # If you use a custom domain name
+#   redirect_uri: "Your redirect url"   # If you quote a custom domain name
 
 # Utterances comments
 # See https://utteranc.es/
