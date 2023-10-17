@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  
+  
+  
+  <entry>
+    <title>windows查看每个程序建立的TCP链接数量</title>
+    <link href="/2023/10/16/windows%E6%9F%A5%E7%9C%8B%E6%AF%8F%E4%B8%AA%E7%A8%8B%E5%BA%8F%E5%BB%BA%E7%AB%8B%E7%9A%84TCP%E9%93%BE%E6%8E%A5%E6%95%B0%E9%87%8F/"/>
+    <url>/2023/10/16/windows%E6%9F%A5%E7%9C%8B%E6%AF%8F%E4%B8%AA%E7%A8%8B%E5%BA%8F%E5%BB%BA%E7%AB%8B%E7%9A%84TCP%E9%93%BE%E6%8E%A5%E6%95%B0%E9%87%8F/</url>
+    
+    <content type="html"><![CDATA[<p>首先以管理管权限打开powershell</p><figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs powershell"><span class="hljs-built_in">Set-ExecutionPolicy</span> RemoteSigned<br></code></pre></td></tr></table></figure><p>然后运行脚本<br>如果你是vip,可以在文章上方直接下载<br>如果不是,可以复制下面的脚本自己新建文件tcpcounts.ps1</p><figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs powershell"><span class="hljs-variable">$netstatOutput</span> = netstat <span class="hljs-literal">-n</span> | findstr /C:<span class="hljs-string">&quot;TCP&quot;</span><br><span class="hljs-variable">$tasklistOutput</span> = tasklist<br><br><span class="hljs-comment"># 正则表达式匹配正在运行的应用程序的名称和PID</span><br><span class="hljs-variable">$processes</span> = <span class="hljs-variable">$tasklistOutput</span> | <span class="hljs-built_in">Select-String</span> <span class="hljs-literal">-Pattern</span> <span class="hljs-string">&#x27;(\S+)\s+(\d+)&#x27;</span> | <span class="hljs-built_in">ForEach-Object</span> &#123; [<span class="hljs-type">PSCustomObject</span>]<span class="hljs-selector-tag">@</span>&#123; Name = <span class="hljs-variable">$_</span>.Matches[<span class="hljs-number">1</span>].Value; PID = <span class="hljs-variable">$_</span>.Matches[<span class="hljs-number">2</span>].Value &#125; &#125;<br><br><br><span class="hljs-variable">$connections</span> = <span class="hljs-built_in">Get-NetTCPConnection</span> | <span class="hljs-built_in">Where-Object</span> &#123; <span class="hljs-variable">$_</span>.State <span class="hljs-operator">-eq</span> <span class="hljs-string">&#x27;Established&#x27;</span> &#125;<br><br><span class="hljs-comment"># 遍历TCP连接并统计每个应用程序的连接数量</span><br><span class="hljs-variable">$connectionCount</span> = <span class="hljs-selector-tag">@</span>&#123;&#125;<br><span class="hljs-keyword">foreach</span> (<span class="hljs-variable">$connection</span> <span class="hljs-keyword">in</span> <span class="hljs-variable">$connections</span>) &#123;<br>    <span class="hljs-variable">$process</span> = <span class="hljs-built_in">Get-Process</span> <span class="hljs-literal">-Id</span> <span class="hljs-variable">$connection</span>.OwningProcess<br>    <span class="hljs-variable">$appName</span> = <span class="hljs-variable">$process</span>.ProcessName<br>    <span class="hljs-keyword">if</span> (<span class="hljs-variable">$connectionCount</span>.ContainsKey(<span class="hljs-variable">$appName</span>)) &#123;<br>        <span class="hljs-variable">$connectionCount</span>[<span class="hljs-variable">$appName</span>]++<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-variable">$connectionCount</span>[<span class="hljs-variable">$appName</span>] = <span class="hljs-number">1</span><br>    &#125;<br>&#125;<br><br><span class="hljs-comment"># 显示每个应用程序的TCP连接数量</span><br><span class="hljs-variable">$connectionCount</span>.GetEnumerator() | <span class="hljs-built_in">Sort-Object</span> Name | <span class="hljs-built_in">Format-Table</span> <span class="hljs-literal">-AutoSize</span><br><br></code></pre></td></tr></table></figure><p>就可以看到</p><img src="/2023/10/16/windows%E6%9F%A5%E7%9C%8B%E6%AF%8F%E4%B8%AA%E7%A8%8B%E5%BA%8F%E5%BB%BA%E7%AB%8B%E7%9A%84TCP%E9%93%BE%E6%8E%A5%E6%95%B0%E9%87%8F/tcpcounts.png" class="" title="图片引用方法一">]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>windows</tag>
+      
+      <tag>tcp</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Gunicorn初探</title>
+    <link href="/2022/12/08/Gunicorn%E5%88%9D%E6%8E%A2/"/>
+    <url>/2022/12/08/Gunicorn%E5%88%9D%E6%8E%A2/</url>
+    
+    <content type="html"><![CDATA[<p>Gunicorn“绿色独角兽”是一个被广泛使用的高性能的Python WSGI UNIX HTTP服务器，移植自Ruby的独角兽（Unicorn ）项目,使用pre-fork worker模式，具有使用非常简单，轻量级的资源消耗，以及高性能等特点</p><p>安装gunicorn</p><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sh">yum install gunicorn<br></code></pre></td></tr></table></figure><p>运行我的Flask服务</p><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sh">gunicorn -w 9 -b 0.0.0.0:5003 <span class="hljs-string">&quot;app:app&quot;</span><br></code></pre></td></tr></table></figure><p>后台根据配置文件启动</p><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sh">gunicorn -D -c gunicorn.conf.py <span class="hljs-string">&quot;app:app&quot;</span><br></code></pre></td></tr></table></figure><ul><li><p>-w</p><blockquote><blockquote><p>工作进程的数量。上边提到gunicorn是一个pre-fork worker模式，就是指gunicorn启动的时候，在主进程中会预先fork出指定数量的worker进程在处理请求时，gunicorn依靠操作系统来提供负载均衡，通常推荐的worker数量是：(2 x $num_cores) + 1</p></blockquote></blockquote></li><li><p>-b</p><blockquote><blockquote><p>与指定socket进行绑定.</p></blockquote></blockquote></li><li><p>-c</p><blockquote><blockquote><p>指定一个配置文件（py文件）.</p></blockquote></blockquote></li><li><p>-D</p><blockquote><blockquote><p>以守护进程形式来运行Gunicorn进程，其实就是将这个服务放到后台去运行。</p></blockquote></blockquote></li><li><p>–chdir</p></li></ul><blockquote><blockquote><p>切换到指定的工作目录.</p></blockquote></blockquote><ul><li>–log-level LEVEL</li></ul><blockquote><blockquote><p>输出error log的颗粒度，有效的LEVEL有:debug、info、warning、error、critical</p></blockquote></blockquote><ul><li>–access-logfile FILE</li></ul><blockquote><blockquote><p>确认要写入Access log的文件FILE. ‘-‘ 表示输出到标准输出.</p></blockquote></blockquote><ul><li>–error-logfile FILE, –log-file FILE</li></ul><blockquote><blockquote><p>确认要写入Error log的文件FILE. ‘-‘ 表示输出到标准错误输出.</p></blockquote></blockquote><p>gunicorn配置文件</p><figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs py"><br><span class="hljs-comment"># gunicorn.pyimport logging</span><br><span class="hljs-keyword">import</span> logging.handlers<br><span class="hljs-keyword">from</span> logging.handlers <span class="hljs-keyword">import</span> WatchedFileHandler<br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> multiprocessing<br>bind = <span class="hljs-string">&#x27;127.0.0.1:8000&#x27;</span>      <span class="hljs-comment">#绑定ip和端口号</span><br>backlog = <span class="hljs-number">512</span>                <span class="hljs-comment">#监听队列</span><br>chdir = <span class="hljs-string">&#x27;/home/test/server/bin&#x27;</span>  <span class="hljs-comment">#gunicorn要切换到的目的工作目录</span><br>timeout = <span class="hljs-number">30</span>      <span class="hljs-comment">#超时</span><br>worker_class = <span class="hljs-string">&#x27;gevent&#x27;</span> <span class="hljs-comment">#使用gevent模式，还可以使用sync 模式，默认的是sync模式</span><br><br>workers = multiprocessing.cpu_count() * <span class="hljs-number">2</span> + <span class="hljs-number">1</span>    <span class="hljs-comment">#进程数</span><br>threads = <span class="hljs-number">2</span> <span class="hljs-comment">#指定每个进程开启的线程数</span><br>loglevel = <span class="hljs-string">&#x27;info&#x27;</span> <span class="hljs-comment">#日志级别，这个日志级别指的是错误日志的级别，而访问日志的级别无法设置</span><br>access_log_format = <span class="hljs-string">&#x27;%(t)s %(p)s %(h)s &quot;%(r)s&quot; %(s)s %(L)s %(b)s %(f)s&quot; &quot;%(a)s&quot;&#x27;</span>    <span class="hljs-comment">#设置gunicorn访问日志格式，错误日志无法设置</span><br><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">其每个选项的含义如下：</span><br><span class="hljs-string">h          remote address</span><br><span class="hljs-string">l          &#x27;-&#x27;</span><br><span class="hljs-string">u          currently &#x27;-&#x27;, may be user name in future releases</span><br><span class="hljs-string">t          date of the request</span><br><span class="hljs-string">r          status line (e.g. ``GET / HTTP/1.1``)</span><br><span class="hljs-string">s          status</span><br><span class="hljs-string">b          response length or &#x27;-&#x27;</span><br><span class="hljs-string">f          referer</span><br><span class="hljs-string">a          user agent</span><br><span class="hljs-string">T          request time in seconds</span><br><span class="hljs-string">D          request time in microseconds</span><br><span class="hljs-string">L          request time in decimal seconds</span><br><span class="hljs-string">p          process ID</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br>accesslog = <span class="hljs-string">&quot;/home/test/server/log/gunicorn_access.log&quot;</span>      <span class="hljs-comment">#访问日志文件</span><br>errorlog = <span class="hljs-string">&quot;/home/test/server/log/gunicorn_error.log&quot;</span>        <span class="hljs-comment">#错误日志文件</span><br></code></pre></td></tr></table></figure><p>查看Gunicorn进程树</p><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sh">pstree -ap|grep gunicorn<br></code></pre></td></tr></table></figure><p>重启Gunicorn任务</p><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sh"><span class="hljs-built_in">kill</span> -HUP 14226<br></code></pre></td></tr></table></figure><p>退出Gunicorn任务</p><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sh"><span class="hljs-built_in">kill</span> -9 28097<br></code></pre></td></tr></table></figure><p>参考地址<br><a href="https://docs.gunicorn.org/en/stable/index.html"><br>Gunicorn - WSGI server</a><br><a href="https://www.jianshu.com/p/260f18aa5462"><br>Gunicorn运行与配置</a><br><a href="https://blog.csdn.net/a1007720052/article/details/79403991"><br>优雅的退出&#x2F;关闭&#x2F;重启gunicorn进程</a></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>python</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>python</tag>
+      
+      <tag>Gunicorn</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>python中计算日期间隔天数</title>
+    <link href="/2019/02/06/python%E4%B8%AD%E8%AE%A1%E7%AE%97%E6%97%A5%E6%9C%9F%E9%97%B4%E9%9A%94%E5%A4%A9%E6%95%B0/"/>
+    <url>/2019/02/06/python%E4%B8%AD%E8%AE%A1%E7%AE%97%E6%97%A5%E6%9C%9F%E9%97%B4%E9%9A%94%E5%A4%A9%E6%95%B0/</url>
+    
+    <content type="html"><![CDATA[<h2 id="python中计算日期间隔天数"><a href="#python中计算日期间隔天数" class="headerlink" title="python中计算日期间隔天数"></a>python中计算日期间隔天数</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> time<br><span class="hljs-comment"># 间隔天数</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">interval</span>(<span class="hljs-params">sday, eday</span>):<br>     start_sec = time.mktime(time.strptime(sday, <span class="hljs-string">&#x27;%Y-%m-%d&#x27;</span>))<br>    end_sec = time.mktime(time.strptime(eday, <span class="hljs-string">&#x27;%Y-%m-%d&#x27;</span>))<br>    work_days = <span class="hljs-built_in">int</span>((end_sec-start_sec)/(<span class="hljs-number">24</span>*<span class="hljs-number">3600</span>))<br>    <span class="hljs-built_in">print</span>(work_days)<br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    starday = <span class="hljs-string">&#x27;2019-2-5&#x27;</span><br>    endday = <span class="hljs-string">&#x27;2019-12-25&#x27;</span><br>    interval(starday, endday)<br></code></pre></td></tr></table></figure>]]></content>
+    
+    
+    <categories>
+      
+      <category>python</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>python</tag>
+      
+      <tag>间隔天数</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>hexo操作手册</title>
+    <link href="/2018/12/08/hexo%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C/"/>
+    <url>/2018/12/08/hexo%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C/</url>
+    
+    <content type="html"><![CDATA[<h3 id="创建文章"><a href="#创建文章" class="headerlink" title="创建文章"></a>创建文章</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ hexo new post <span class="hljs-string">&quot;新的文章&quot;</span><br></code></pre></td></tr></table></figure><h3 id="清理"><a href="#清理" class="headerlink" title="清理"></a>清理</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">hexo clean<br></code></pre></td></tr></table></figure><h3 id="本地启动"><a href="#本地启动" class="headerlink" title="本地启动"></a>本地启动</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">hexo g -d<br>hexo s<br></code></pre></td></tr></table></figure>]]></content>
+    
+    
+    <categories>
+      
+      <category>hexo</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>hexo</tag>
+      
+      <tag>命令</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  
+</search>
